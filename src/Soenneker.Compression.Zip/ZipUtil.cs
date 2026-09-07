@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Soenneker.Compression.Zip.Abstract;
@@ -22,6 +23,7 @@ public sealed class ZipUtil : IZipUtil
     private static readonly StringComparer _pathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly StringComparison _pathComparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
+    private static readonly SearchValues<char> _invalidFileNameChars = SearchValues.Create(Path.GetInvalidFileNameChars());
     private readonly ILogger<ZipUtil> _logger;
     private readonly IFileUtil _fileUtil;
     private readonly IDirectoryUtil _directoryUtil;
@@ -463,23 +465,26 @@ public sealed class ZipUtil : IZipUtil
 
     private static void ValidateEntryName(string entryName)
     {
-        string[] segments = entryName.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
-        foreach (string segment in segments)
+        ReadOnlySpan<char> path = entryName.AsSpan();
+        foreach (Range range in path.SplitAny("/\\"))
         {
-            if (segment is "." or "..")
+            ReadOnlySpan<char> segment = path[range];
+            if (segment.IsEmpty)
+                continue;
+            if (segment.SequenceEqual(".") || segment.SequenceEqual(".."))
                 throw new InvalidDataException($"Archive entry contains a relative path segment: {entryName}");
 
-            if (segment.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            if (segment.IndexOfAny(_invalidFileNameChars) >= 0)
                 throw new InvalidDataException($"Archive entry contains invalid path characters: {entryName}");
 
-            if (OperatingSystem.IsWindows() && (segment.EndsWith(' ') || segment.EndsWith('.') || IsWindowsDeviceName(segment)))
+            if (OperatingSystem.IsWindows() && (segment[^1] == ' ' || segment[^1] == '.' || IsWindowsDeviceName(segment)))
                 throw new InvalidDataException($"Archive entry contains a Windows-reserved path segment: {entryName}");
         }
     }
 
-    private static bool IsWindowsDeviceName(string segment)
+    private static bool IsWindowsDeviceName(ReadOnlySpan<char> segment)
     {
-        string name = Path.GetFileNameWithoutExtension(segment).TrimEnd(' ', '.');
+        ReadOnlySpan<char> name = Path.GetFileNameWithoutExtension(segment).TrimEnd(" .");
         if (name.Equals("CON", StringComparison.OrdinalIgnoreCase) || name.Equals("PRN", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("AUX", StringComparison.OrdinalIgnoreCase) || name.Equals("NUL", StringComparison.OrdinalIgnoreCase))
             return true;
