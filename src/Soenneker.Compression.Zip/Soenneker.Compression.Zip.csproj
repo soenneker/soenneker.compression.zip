@@ -50,6 +50,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.927" />
         <PackageReference Include="Soenneker.Utils.ExecutionContexts" Version="4.0.39" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2256" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2258" />
     </ItemGroup>
 </Project>
