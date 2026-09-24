@@ -1,3 +1,4 @@
+using Soenneker.Utils.File.Abstract;
 using Soenneker.Compression.Zip.Abstract;
 using Soenneker.Compression.Zip.Options;
 using Soenneker.Tests.HostedUnit;
@@ -14,10 +15,13 @@ namespace Soenneker.Compression.Zip.Tests;
 [ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
 public sealed class ZipUtilTests : HostedUnitTest
 {
+    private readonly IFileUtil _fileUtil;
+
     private readonly IZipUtil _util;
 
     public ZipUtilTests(Host host) : base(host)
     {
+        _fileUtil = Resolve<IFileUtil>(true);
         _util = Resolve<IZipUtil>(true);
     }
 
@@ -32,14 +36,14 @@ public sealed class ZipUtilTests : HostedUnitTest
         try
         {
             Directory.CreateDirectory(Path.Combine(source, "nested", "empty"));
-            await File.WriteAllTextAsync(Path.Combine(source, "root.txt"), "root payload", cancellationToken);
-            await File.WriteAllBytesAsync(Path.Combine(source, "nested", "data.bin"), [0, 1, 2, 3, 255], cancellationToken);
+            await _fileUtil.Write(Path.Combine(source, "root.txt"), "root payload", cancellationToken: cancellationToken);
+            await _fileUtil.Write(Path.Combine(source, "nested", "data.bin"), [0, 1, 2, 3, 255], cancellationToken: cancellationToken);
 
             await _util.Compress(source, archive, cancellationToken: cancellationToken);
             await _util.Extract(archive, destination, cancellationToken: cancellationToken);
 
-            await Assert.That(await File.ReadAllTextAsync(Path.Combine(destination, "root.txt"), cancellationToken)).IsEqualTo("root payload");
-            await Assert.That(await File.ReadAllBytesAsync(Path.Combine(destination, "nested", "data.bin"), cancellationToken))
+            await Assert.That(await _fileUtil.Read(Path.Combine(destination, "root.txt"), cancellationToken: cancellationToken)).IsEqualTo("root payload");
+            await Assert.That(await _fileUtil.ReadToBytes(Path.Combine(destination, "nested", "data.bin"), cancellationToken: cancellationToken))
                 .IsEquivalentTo(new byte[] { 0, 1, 2, 3, 255 });
             await Assert.That(Directory.Exists(Path.Combine(destination, "nested", "empty"))).IsTrue();
         }
@@ -57,7 +61,7 @@ public sealed class ZipUtilTests : HostedUnitTest
 
         try
         {
-            await File.WriteAllTextAsync(Path.Combine(source, "content.txt"), "content", cancellationToken);
+            await _fileUtil.Write(Path.Combine(source, "content.txt"), "content", cancellationToken: cancellationToken);
             await _util.Compress(source, archivePath, cancellationToken: cancellationToken);
 
             using ZipArchive archive = ZipFile.OpenRead(archivePath);
@@ -77,7 +81,7 @@ public sealed class ZipUtilTests : HostedUnitTest
 
         try
         {
-            await File.WriteAllTextAsync(Path.Combine(source, "content.txt"), "content", cancellationToken);
+            await _fileUtil.Write(Path.Combine(source, "content.txt"), "content", cancellationToken: cancellationToken);
             await using var archive = new MemoryStream();
 
             await _util.Compress(source, archive, cancellationToken: cancellationToken);
@@ -87,7 +91,7 @@ public sealed class ZipUtilTests : HostedUnitTest
             await _util.Extract(archive, destination, cancellationToken: cancellationToken);
 
             await Assert.That(archive.CanRead).IsTrue();
-            await Assert.That(await File.ReadAllTextAsync(Path.Combine(destination, "content.txt"), cancellationToken)).IsEqualTo("content");
+            await Assert.That(await _fileUtil.Read(Path.Combine(destination, "content.txt"), cancellationToken: cancellationToken)).IsEqualTo("content");
         }
         finally
         {
@@ -116,8 +120,8 @@ public sealed class ZipUtilTests : HostedUnitTest
             async Task Extract() => await _util.Extract(stream, destination, cancellationToken: cancellationToken);
 
             await Assert.That(Extract).Throws<InvalidDataException>();
-            await Assert.That(File.Exists(Path.Combine(destination, "valid.txt"))).IsFalse();
-            await Assert.That(File.Exists(escapedPath)).IsFalse();
+            await Assert.That((await _fileUtil.Exists(Path.Combine(destination, "valid.txt")))).IsFalse();
+            await Assert.That((await _fileUtil.Exists(escapedPath))).IsFalse();
         }
         finally
         {
@@ -157,7 +161,7 @@ public sealed class ZipUtilTests : HostedUnitTest
 
         try
         {
-            await File.WriteAllTextAsync(destinationFile, "existing", cancellationToken);
+            await _fileUtil.Write(destinationFile, "existing", cancellationToken: cancellationToken);
             await using var stream = new MemoryStream();
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
                 await WriteEntry(archive, "content.txt", "replacement", cancellationToken);
@@ -166,7 +170,7 @@ public sealed class ZipUtilTests : HostedUnitTest
             async Task Extract() => await _util.Extract(stream, destination, cancellationToken: cancellationToken);
 
             await Assert.That(Extract).Throws<IOException>();
-            await Assert.That(await File.ReadAllTextAsync(destinationFile, cancellationToken)).IsEqualTo("existing");
+            await Assert.That(await _fileUtil.Read(destinationFile, cancellationToken: cancellationToken)).IsEqualTo("existing");
         }
         finally
         {
