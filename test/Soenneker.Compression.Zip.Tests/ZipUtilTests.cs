@@ -26,7 +26,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task CompressAndExtract_RoundTripsNestedFilesAndEmptyDirectories(CancellationToken cancellationToken)
+    public async ValueTask CompressAndExtract_RoundTripsNestedFilesAndEmptyDirectories(CancellationToken cancellationToken)
     {
         string root = CreateTempDirectory();
         string source = Directory.CreateDirectory(Path.Combine(root, "source")).FullName;
@@ -54,7 +54,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Compress_WhenArchiveIsInsideSource_DoesNotArchiveItself(CancellationToken cancellationToken)
+    public async ValueTask Compress_WhenArchiveIsInsideSource_DoesNotArchiveItself(CancellationToken cancellationToken)
     {
         string source = CreateTempDirectory();
         string archivePath = Path.Combine(source, "archive.zip");
@@ -74,7 +74,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task StreamOverloads_LeaveCallerOwnedStreamsOpen(CancellationToken cancellationToken)
+    public async ValueTask StreamOverloads_LeaveCallerOwnedStreamsOpen(CancellationToken cancellationToken)
     {
         string source = CreateTempDirectory();
         string destination = CreateTempDirectory();
@@ -101,7 +101,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Extract_RejectsPathTraversalBeforeWritingFiles(CancellationToken cancellationToken)
+    public async ValueTask Extract_RejectsPathTraversalBeforeWritingFiles(CancellationToken cancellationToken)
     {
         string root = CreateTempDirectory();
         string destination = Path.Combine(root, "destination");
@@ -130,7 +130,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Extract_EnforcesConfiguredUncompressedSizeLimit(CancellationToken cancellationToken)
+    public async ValueTask Extract_EnforcesConfiguredUncompressedSizeLimit(CancellationToken cancellationToken)
     {
         string destination = CreateTempDirectory();
 
@@ -154,7 +154,7 @@ public sealed class ZipUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Extract_DoesNotOverwriteByDefault(CancellationToken cancellationToken)
+    public async ValueTask Extract_DoesNotOverwriteByDefault(CancellationToken cancellationToken)
     {
         string destination = CreateTempDirectory();
         string destinationFile = Path.Combine(destination, "content.txt");
