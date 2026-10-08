@@ -120,8 +120,8 @@ public sealed class ZipUtilTests : HostedUnitTest
             async Task Extract() => await _util.Extract(stream, destination, cancellationToken: cancellationToken);
 
             await Assert.That(Extract).Throws<InvalidDataException>();
-            await Assert.That((await _fileUtil.Exists(Path.Combine(destination, "valid.txt")))).IsFalse();
-            await Assert.That((await _fileUtil.Exists(escapedPath))).IsFalse();
+            await Assert.That((await _fileUtil.Exists(Path.Combine(destination, "valid.txt"), cancellationToken: cancellationToken))).IsFalse();
+            await Assert.That((await _fileUtil.Exists(escapedPath, cancellationToken: cancellationToken))).IsFalse();
         }
         finally
         {
