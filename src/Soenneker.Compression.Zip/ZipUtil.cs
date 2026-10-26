@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Soenneker.Compression.Zip.Abstract;
 using Soenneker.Compression.Zip.Options;
+using ZipExtractionOptions = Soenneker.Compression.Zip.Options.ZipExtractionOptions;
 using Soenneker.Utils.Directory.Abstract;
 using Soenneker.Utils.ExecutionContexts;
 using Soenneker.Utils.File.Abstract;
