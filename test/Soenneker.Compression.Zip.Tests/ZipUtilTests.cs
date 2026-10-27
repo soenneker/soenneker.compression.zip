@@ -1,6 +1,6 @@
 using Soenneker.Utils.File.Abstract;
 using Soenneker.Compression.Zip.Abstract;
-using Soenneker.Compression.Zip.Options;
+using ZipExtractionOptions = Soenneker.Compression.Zip.Options.ZipExtractionOptions;
 using Soenneker.Tests.HostedUnit;
 using System;
 using System.IO;
